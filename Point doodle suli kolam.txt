@@ -1,0 +1,150 @@
+Suli kolam point doodle
+
+
+
+// -------- STRICT 90° SULI KOLAM --------
+
+String axiom = "FBFBFBFB";
+int iterations = 2;
+float forwardLen = 10;
+
+ArrayList<Kolam> kolams = new ArrayList<Kolam>();
+
+color[] colors = {
+  #000000   // pure kolam white/black look
+};
+
+void setup() {
+  fullScreen();
+  background(255);
+  strokeWeight(3);
+  frameRate(60);
+  noFill();
+}
+
+// Create kolam at clicked center
+void mousePressed() {
+  kolams.add(new Kolam(mouseX, mouseY));
+}
+
+void draw() {
+  for (Kolam k : kolams) {
+    k.update();
+  }
+}
+
+/* ===================================================
+                       KOLAM
+=================================================== */
+
+class Kolam {
+
+  float xPos, yPos;
+  int dirIndex = 0;  // 0=right,1=down,2=left,3=up
+
+  String instructions;
+  int drawIndex = 0;
+
+  Kolam(float cx, float cy) {
+
+    xPos = cx;
+    yPos = cy;
+
+    instructions = generateLSystem(axiom, iterations);
+  }
+
+  void update() {
+
+    if (drawIndex >= instructions.length()) return;
+
+    char ch = instructions.charAt(drawIndex);
+
+    if (ch == 'F') {
+      moveForward(forwardLen);
+    }
+    else if (ch == 'A') {
+      smoothArc90(20, true);   // clockwise quarter arc
+    }
+    else if (ch == 'B') {
+      smoothArc90(20, false);  // anticlockwise quarter arc
+    }
+
+    drawIndex++;
+  }
+
+  /* -------- GRID FORWARD -------- */
+
+  void moveForward(float step) {
+
+    float newX = xPos;
+    float newY = yPos;
+
+    if (dirIndex == 0) newX += step;      // right
+    if (dirIndex == 1) newY += step;      // down
+    if (dirIndex == 2) newX -= step;      // left
+    if (dirIndex == 3) newY -= step;      // up
+
+    line(xPos, yPos, newX, newY);
+
+    xPos = newX;
+    yPos = newY;
+  }
+
+  /* -------- PURE 90° ARC -------- */
+
+  void smoothArc90(float radius, boolean clockwise) {
+
+    int steps = 20;
+    float angleStep = 90.0 / steps;
+
+    if (!clockwise) angleStep *= -1;
+
+    float baseAngle = dirIndex * 90;
+
+    for (int i = 0; i < steps; i++) {
+
+      float theta = radians(baseAngle + i * angleStep);
+
+      float newX = xPos + cos(theta) * radius * 0.1;
+      float newY = yPos + sin(theta) * radius * 0.1;
+
+      line(xPos, yPos, newX, newY);
+
+      xPos = newX;
+      yPos = newY;
+    }
+
+    // Update direction strictly 90°
+    if (clockwise)
+      dirIndex = (dirIndex + 1) % 4;
+    else
+      dirIndex = (dirIndex + 3) % 4;
+  }
+}
+
+/* ===================================================
+                   L SYSTEM
+=================================================== */
+
+String generateLSystem(String ax, int iterCount) {
+
+  String current = ax;
+
+  for (int i = 0; i < iterCount; i++) {
+
+    String nextStr = "";
+
+    for (int j = 0; j < current.length(); j++) {
+
+      char ch = current.charAt(j);
+
+      if (ch == 'A') nextStr += "AFBFA";
+      else if (ch == 'B') nextStr += "AFBFBFBFA";
+      else nextStr += ch;
+    }
+
+    current = nextStr;
+  }
+
+  return current;
+}
