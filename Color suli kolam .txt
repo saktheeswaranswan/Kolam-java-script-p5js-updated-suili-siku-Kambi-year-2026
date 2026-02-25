@@ -1,0 +1,145 @@
+Suli color kolam
+
+
+
+// -------- SULI KOLAM TOUCH GENERATOR --------
+
+String axiom = "FBFBFBFB";
+int iterations = 12;
+float forwardLen =1;
+
+ArrayList<Kolam> kolams = new ArrayList<Kolam>();
+
+color[] colors = {
+  #E53935, #1E88E5, #43A047, 
+  #8E24AA, #FB8C00
+};
+
+void setup() {
+  fullScreen();
+  background(255);
+  strokeWeight(3);
+  frameRate(60);
+  noFill();
+}
+
+// -------- CREATE NEW KOLAM ON TOUCH --------
+
+void mousePressed() {
+  kolams.add(new Kolam(mouseX, mouseY));
+}
+
+void draw() {
+  for (Kolam k : kolams) {
+    k.update();
+  }
+}
+
+/* ===================================================
+                     KOLAM CLASS
+=================================================== */
+
+class Kolam {
+
+  float xPos, yPos;
+  float angleDeg;
+  String instructions;
+  int drawIndex = 0;
+  int colorIndex = 0;
+
+  Kolam(float x, float y) {
+
+    xPos = x;
+    yPos = y;
+
+    // random rotation for organic feel
+    angleDeg = random(360);
+
+    instructions = generateLSystem(axiom, iterations);
+  }
+
+  void update() {
+
+    if (drawIndex >= instructions.length()) return;
+
+    char ch = instructions.charAt(drawIndex);
+
+    if (ch == 'F') {
+      stroke(nextColor());
+      moveForward(forwardLen);
+    }
+    else if (ch == 'A') {
+      smoothArc(20, 90);
+    }
+    else if (ch == 'B') {
+      float I = 8 / sqrt(2);
+      moveForward(I);
+      smoothArc(I, 270);
+      moveForward(I);
+    }
+
+    drawIndex++;
+  }
+
+  color nextColor() {
+    color c = colors[colorIndex];
+    colorIndex = (colorIndex + 1) % colors.length;
+    return c;
+  }
+
+  void moveForward(float step) {
+    float newX = xPos + cos(radians(angleDeg)) * step;
+    float newY = yPos + sin(radians(angleDeg)) * step;
+
+    line(xPos, yPos, newX, newY);
+
+    xPos = newX;
+    yPos = newY;
+  }
+
+  void smoothArc(float radius, float sweepDeg) {
+
+    int steps = 40;
+    float stepAngle = sweepDeg / steps;
+    float arcLength = TWO_PI * radius * abs(sweepDeg) / 360.0;
+    float stepLen = arcLength / steps;
+
+    for (int i = 0; i < steps; i++) {
+
+      float newX = xPos + cos(radians(angleDeg)) * stepLen;
+      float newY = yPos + sin(radians(angleDeg)) * stepLen;
+
+      line(xPos, yPos, newX, newY);
+
+      xPos = newX;
+      yPos = newY;
+
+      angleDeg += stepAngle;
+    }
+  }
+}
+
+/* ===================================================
+                 L SYSTEM GENERATOR
+=================================================== */
+
+String generateLSystem(String ax, int iterCount) {
+
+  String current = ax;
+
+  for (int i = 0; i < iterCount; i++) {
+    String nextStr = "";
+
+    for (int j = 0; j < current.length(); j++) {
+      char ch = current.charAt(j);
+
+      if (ch == 'A') nextStr += "AFBFA";
+      else if (ch == 'B') nextStr += "AFBFBFBFA";
+      else nextStr += ch;
+    }
+
+    current = nextStr;
+  }
+
+  return current;
+}
