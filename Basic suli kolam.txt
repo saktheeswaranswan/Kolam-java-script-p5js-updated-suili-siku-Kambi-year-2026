@@ -1,0 +1,119 @@
+Suli kolam
+
+
+String axiom = "FBFBFBFB";
+int iterations = 2;
+
+float forwardLen = 8;
+
+String instructions;
+int drawIndex = 0;
+
+float xPos, yPos;
+float angleDeg = 0;
+
+color[] colors = {#E53935, #1E88E5, #43A047};
+int colorIndex = 0;
+
+void setup() {
+  fullScreen();
+  background(255);
+  strokeWeight(3);
+  frameRate(60);
+  noFill();
+
+  xPos = width/2;
+  yPos = height/2;
+
+  instructions = generateLSystem(axiom, iterations);
+}
+
+void draw() {
+
+  if (drawIndex >= instructions.length()) return;
+
+  char ch = instructions.charAt(drawIndex);
+
+  if (ch == 'F') {
+    stroke(nextColor());
+    moveForward(forwardLen);
+  }
+  else if (ch == 'A') {
+    smoothArc(20, 90);   // bulged 90° curve
+  }
+  else if (ch == 'B') {
+    float I = 8 / sqrt(2);
+    moveForward(I);
+    smoothArc(I, 270);   // big bulged sweep
+    moveForward(I);
+  }
+
+  drawIndex++;
+}
+
+color nextColor() {
+  color c = colors[colorIndex];
+  colorIndex = (colorIndex + 1) % colors.length;
+  return c;
+}
+
+/* -------- L-SYSTEM -------- */
+
+String generateLSystem(String ax, int iterCount) {
+
+  String current = ax;
+
+  for (int i = 0; i < iterCount; i++) {
+    String nextStr = "";
+
+    for (int j = 0; j < current.length(); j++) {
+      char ch = current.charAt(j);
+
+      if (ch == 'A') nextStr += "AFBFA";
+      else if (ch == 'B') nextStr += "AFBFBFBFA";
+      else nextStr += ch;
+    }
+
+    current = nextStr;
+  }
+
+  return current;
+}
+
+/* -------- TRUE BULGED ARC -------- */
+
+void smoothArc(float radius, float sweepDeg) {
+
+  int steps = 30;                    // higher = smoother
+  float stepAngle = sweepDeg / steps;
+  float arcLength = TWO_PI * radius * abs(sweepDeg) / 360.0;
+  float stepLen = arcLength / steps;
+
+  for (int i = 0; i < steps; i++) {
+
+    float newX = xPos + cos(radians(angleDeg)) * stepLen;
+    float newY = yPos + sin(radians(angleDeg)) * stepLen;
+
+    line(xPos, yPos, newX, newY);
+
+    xPos = newX;
+    yPos = newY;
+
+    angleDeg += stepAngle;
+  }
+}
+
+/* -------- FORWARD -------- */
+
+void moveForward(float step) {
+  float newX = xPos + cos(radians(angleDeg)) * step;
+  float newY = yPos + sin(radians(angleDeg)) * step;
+
+  line(xPos, yPos, newX, newY);
+
+  xPos = newX;
+  yPos = newY;
+}
+
+
+
